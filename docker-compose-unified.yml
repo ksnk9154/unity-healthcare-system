@@ -1,0 +1,127 @@
+services:
+  # Backend API
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://healthcare:healthcare123@postgres:5432/healthcare_db
+      - KAFKA_BROKERS=kafka:9092
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - healthcare-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    env_file:
+      - ./stack/pg.env
+    volumes:
+      - ./stack/postgresql.conf:/etc/postgresql/postgresql.conf
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./stack/setup.sql:/docker-entrypoint-initdb.d/setup-2.sql
+    ports:
+      - "5432:5432"
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 10
+    networks:
+      - healthcare-network
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - healthcare-network
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - healthcare-network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - healthcare-network
+
+  # Kafka Connect (Debezium)
+  connect:
+    image: debezium/connect:2.3
+    depends_on: [kafka, zookeeper, postgres]
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: 'kafka:9092'
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: my_connect_configs
+      OFFSET_STORAGE_TOPIC: my_connect_offsets
+      STATUS_STORAGE_TOPIC: my_connect_status
+      CONNECT_PLUGIN_PATH: /kafka/connect/
+    volumes:
+      - ./stack/connector.json:/connector/connector.json
+    networks:
+      - healthcare-network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.46.0
+    volumes:
+      - ./stack/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    networks:
+      - healthcare-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:9.5.3
+    depends_on: [prometheus]
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - healthcare-network
+
+volumes:
+  postgres_data:
+
+networks:
+  healthcare-network:
+    driver: bridge
