@@ -1,25 +1,19 @@
-# TODO: Combine Stack Folder with Backend
+# Dashboard Appointment Filtering Fix
 
-## Phase 1: Analysis and Planning
-- [x] Analyze stack folder structure and services
-- [x] Identify integration points with backend
-- [ ] Create unified docker-compose.yml
-- [ ] Update backend configuration for stack services
+## Steps to Complete:
+- [x] Analyze the current appointment filtering issue
+- [x] Identify that date and time are separate fields in the database
+- [x] Understand that current logic only uses date part, ignoring time
+- [x] Fix the filtering logic in Dashboard.jsx to properly combine date and time
+- [ ] Test the changes to ensure proper categorization
 
-## Phase 2: Configuration Integration
-- [ ] Merge PostgreSQL configuration from stack/pg.env
-- [ ] Integrate database setup from stack/setup.sql
-- [ ] Update backend Dockerfile to use stack patterns
-- [ ] Create unified environment configuration
+## Current Issue:
+Appointments are not being properly divided into "Upcoming" and "Past" sections because the filtering logic only considers the date part and ignores the time component.
 
-## Phase 3: Service Integration
-- [ ] Add Kafka and Debezium services
-- [ ] Add monitoring services (Prometheus/Grafana)
-- [ ] Update backend to connect with new services
-- [ ] Test all service connections
+## Solution:
+Fixed by combining the `apt.date` and `apt.time` fields to create proper datetime objects for accurate comparison using: `new Date(`${apt.date}T${apt.time}`)`
 
-## Phase 4: Testing and Validation
-- [ ] Test complete stack startup
-- [ ] Verify database connectivity
-- [ ] Test API endpoints
-- [ ] Update documentation
+## Changes Made:
+- Updated `frontend/src/pages/Dashboard.jsx` to properly handle both date and time in appointment filtering
+- Replaced `const aptDate = new Date(apt.date);` with `const aptDateTime = new Date(`${apt.date}T${apt.time}`);`
+- Updated the comparison logic to use the combined datetime object

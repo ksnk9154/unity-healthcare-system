@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { hospitalData } from '../data/hospital';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 
 export default function Appointment() {
   const { currentUser } = useContext(AuthContext);
@@ -17,12 +17,10 @@ export default function Appointment() {
     notes: ''
   });
 
-  const [departments, setDepartments] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
   useEffect(() => {
-    setDepartments(hospitalData.departments);
     setTimeSlots(hospitalData.timeSlots);
 
     // Fetch doctors list from backend

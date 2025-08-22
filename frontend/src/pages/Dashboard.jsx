@@ -32,8 +32,9 @@ export default function Dashboard() {
           const currentApts = [];
           const historyApts = [];
           response.data.forEach(apt => {
-            const aptDate = new Date(apt.date);
-            if (apt.status === 'scheduled' && aptDate >= now) {
+            // Combine date and time to create proper datetime for comparison
+            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+            if (apt.status === 'scheduled' && aptDateTime >= now) {
               currentApts.push(apt);
             } else {
               historyApts.push(apt);
@@ -133,9 +134,6 @@ export default function Dashboard() {
           </table>
             )}
           </div>
-          <div>
-            <button onClick={() => window.location.href = '/book-appointment'}>Book New Appointment</button>
-          </div>
         </div>
       </section>
     );
@@ -211,9 +209,6 @@ export default function Dashboard() {
             </tbody>
           </table>
             )}
-          </div>
-          <div>
-          <button style={{ color: 'black' }} onClick={() => window.location.href = '/patient/logs'}>View Patient Logs</button>
           </div>
         </div>
       </section>
