@@ -1,0 +1,26 @@
+{
+  "name": "postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "1234",
+    "database.dbname": "unitydb",
+    
+    "topic.prefix": "unitydb",
+    
+    "plugin.name": "pgoutput",
+    
+    "slot.name": "debezium_slot",
+    "publication.autocreate.mode": "filtered",
+    
+    "include.schema.changes": "true",
+    
+    "database.tcpKeepAlive": "true",
+    "database.connectionTimeoutMs": "30000",
+    "database.sslmode": "disable"
+  }
+}
